@@ -8,13 +8,14 @@ public class EchoServer {
 
     public static void tcpServer(int port){
         System.out.println("TCP Server Test");
-        System.out.println("port : " + port);
+        System.out.println("port : " + port + "\n");
 
         try {
             ServerSocket serverSocket = new ServerSocket(port);
             System.out.println("Server is ready");
+            System.out.println("Waiting connection\n");
             Socket clientSocket = serverSocket.accept();
-            System.out.println("Connect completed");
+            System.out.println("Connect completed\n");
 
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -41,7 +42,7 @@ public class EchoServer {
 
     public static void udpServer(int port) {
         System.out.println("UDP Server Test");
-        System.out.println("port : " + port);
+        System.out.println("port : " + port + "\n");
 
         try{
             DatagramSocket socket = new DatagramSocket(port);

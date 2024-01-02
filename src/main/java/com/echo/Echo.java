@@ -28,13 +28,12 @@ public class Echo {
             }
         }
 
+        System.out.println("\n***************************************");
         System.out.println("mode : " + mode);
         System.out.println("protocol : " + protocol);
         System.out.println("port : " + port);
         System.out.println("address : " + address);
-        System.out.println("***************************************");
-        System.out.println("***************************************");
-        System.out.println("***************************************");
+        System.out.println("***************************************\n");
 
         switch (mode) {
             case "server":

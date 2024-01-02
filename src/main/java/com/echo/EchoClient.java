@@ -9,7 +9,7 @@ public class EchoClient {
 
         try {
             Socket echoSocket = new Socket(hostName, port);
-            System.out.println("port : " + port);
+            System.out.println("port : " + port + "\n");
             PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
@@ -41,7 +41,7 @@ public class EchoClient {
 
     public static void udpClient(int port, String hostName){
         System.out.println("UDP Client Test");
-        System.out.println("port : " + port);
+        System.out.println("port : " + port + "\n");
 
         try {
             InetAddress address = InetAddress.getByName(hostName);
