@@ -6,16 +6,16 @@ import java.util.*;
 
 public class EchoServer {
 
-    public static void tcpServer(String arg){
+    public static void tcpServer(int port){
         System.out.println("TCP Server Test");
-        int portNumber = Integer.parseInt(arg);
-        System.out.println("port : " + portNumber);
+        System.out.println("port : " + port);
 
         try {
-            ServerSocket serverSocket = new ServerSocket(portNumber);
+            ServerSocket serverSocket = new ServerSocket(port);
             System.out.println("Server is ready");
             Socket clientSocket = serverSocket.accept();
             System.out.println("Connect completed");
+
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String inputLine;
@@ -28,24 +28,23 @@ public class EchoServer {
                 }
             }
 
+            in.close();
+            out.close();
             clientSocket.close();
             serverSocket.close();
-            out.close();
-            in.close();
 
         } catch (IOException ie){
-            System.err.println("Exception caught when trying to listen on port " + portNumber + " or listening for a connection");
+            System.err.println("Exception caught when trying to listen on port " + port + " or listening for a connection");
             System.err.println(ie.getMessage());
         }
     }
 
-    public static void udpServer(String arg) {
+    public static void udpServer(int port) {
         System.out.println("UDP Server Test");
-        int portNumber = Integer.parseInt(arg);
-        System.out.println("port : " + portNumber);
+        System.out.println("port : " + port);
 
         try{
-            DatagramSocket socket = new DatagramSocket(portNumber);
+            DatagramSocket socket = new DatagramSocket(port);
             while(true){
                 byte[] buf = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -56,14 +55,13 @@ public class EchoServer {
                 InetAddress address = packet.getAddress();
                 int clientPort = packet.getPort();
                 System.out.println("Client(Port:" + clientPort + ")>" + dataGot);
-                String[] parts = dataGot.split(" ");
-
+                String[] parts = dataGot.split(":");
 
                 packet = new DatagramPacket(buf, buf.length, address, clientPort);
 
                 socket.send(packet);
 
-                if (parts.length == 3 && parts[2].equals("exit")){
+                if (parts.length == 2 && parts[1].equals("exit")){
                     break;
                 }
             }
