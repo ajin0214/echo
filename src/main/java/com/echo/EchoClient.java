@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class EchoClient {
     public static void tcpClient1(int port, String hostName) {
@@ -51,22 +53,26 @@ public class EchoClient {
             System.out.println("port : " + port + "\n");
             PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
-            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+
             String input;
-            String userInput;
 
-            while ((userInput = stdIn.readLine()) != null) {
-                byte[] stdInBuf = new byte[1024];
-                stdInBuf = userInput.getBytes(StandardCharsets.UTF_8);
-                int bytesRead = stdInBuf.length;
+            while (true) {
+                Queue<Byte> queue = new LinkedList<>();
 
-                System.out.println("BytesRead Size : " + bytesRead);
-                String userInput = new String(stdInBuf, 0, bytesRead);
-                System.out.println("userInput : " + userInput);
-                out.println(userInput);
-                System.out.println("echo>" + (input = in.readLine()));
-                if (input.equals("exit")) {
-                    break;
+                int inputChar = System.in.read();
+                while (inputChar != 10) {
+                    queue.offer((byte) inputChar);
+                    inputChar = System.in.read();
+                }
+
+                int count = 0;
+                gogoBuffer(queue, out, count);
+
+                for (int i = 0; i < count; i++) {
+                    System.out.println("echo>" + (input = in.readLine()));
+                    if (input.equals("exit")) {
+                        break;
+                    }
                 }
             }
 
@@ -86,12 +92,25 @@ public class EchoClient {
         }
     }
 
-    public static void addValueToArray(byte[] array, byte value) {
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == 0) {
-                array[i] = value;
-                break;
+    public static int gogoBuffer(Queue<Byte> queue, PrintWriter out, int count) {
+        count++;
+        byte[] buf = new byte[1024];
+        int queueSize = queue.size();
+        if (queueSize <= 1024) {
+            for (int i = 0; i < queueSize; i++) {
+                byte temp = queue.poll();
+                buf[i] = temp;
             }
+            String userinput = new String(buf, 0, queueSize);
+            out.println(userinput);
+            return count;
+        } else { /*큐사이즈가 버퍼크기를 넘길때 */
+            for (int i = 0; i < 1024; i++) {
+                buf[i] = queue.poll();
+            }
+            String userinput = new String(buf, 0, 1023);
+            out.println(userinput);
+            gogoBuffer(queue, out, count);
         }
     }
 
