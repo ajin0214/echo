@@ -57,8 +57,8 @@ public class EchoClient {
             boolean on = true;
 
             while (on) {
-
-                int count = buffergogo(out);
+                int count = 0;
+                count = buffergogo(out,count);
 
                 for (int i = 0; i < count; i++) {
                     System.out.println("echo>" + (input = in.readLine()));
@@ -92,8 +92,8 @@ public class EchoClient {
         }
     }
 
-    public static int buffergogo(PrintWriter out) throws IOException {
-        int count = 1;
+    public static int buffergogo(PrintWriter out,int count) throws IOException {
+        count += 1;
         byte[] stdIn = new byte[1024];
         int inputChar = System.in.read();
         int idx = 0;
@@ -101,7 +101,7 @@ public class EchoClient {
             stdIn[idx] = (byte)inputChar;
             if (idx == 1023){
                 out.println(new String(stdIn,0,idx));
-                count += buffergogo(out);
+                count = buffergogo(out,count);
                 break;
             }
             inputChar = System.in.read();
@@ -110,9 +110,59 @@ public class EchoClient {
         if (idx == 1023){
             return count;
         }
-        out.println(new String(stdIn,0,idx));
+        if ( count <= 1 || idx != 0 ){
+            out.println(new String(stdIn,0,idx));
+        }else{
+            count-=1;
+        }
+
         return count;
     }
+
+    public static void tcpClient123(int port, String hostName) {
+        System.out.println("TCP Client Test");
+
+        try {
+
+            Socket echoSocket = new Socket(hostName, port);
+            System.out.println("port : " + port + "\n");
+            PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
+            String input;
+            String userInput;
+
+            while (true) {
+                byte[] stdInBuf = new byte[1024];
+                int bytesRead = System.in.read(stdInBuf);
+
+                System.out.println("BytesRead Size : " + bytesRead);
+                userInput = new String(stdInBuf, 0, bytesRead-1);
+                System.out.println("userInput : " + userInput);
+                out.println(userInput);
+                System.out.println("echo>" + (input = in.readLine()));
+                if (input.equals("exit")) {
+                    break;
+                }
+            }
+
+
+            in.close();
+            out.close();
+            echoSocket.close();
+
+        } catch (UnknownHostException ue) {
+            System.err.println("Don't know about host " + hostName);
+            System.err.println(ue.getMessage());
+            System.exit(1);
+        } catch (IOException ie) {
+            System.err.println("Couldn't get I/O for the connection to " + hostName);
+            System.err.println(ie.getMessage());
+            System.exit(1);
+        }
+    }
+
+
+
 
     public static void udpClient(int port, String hostName) {
         System.out.println("UDP Client Test");
