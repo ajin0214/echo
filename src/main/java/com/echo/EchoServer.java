@@ -6,7 +6,7 @@ import java.util.*;
 
 public class EchoServer {
 
-    public static void tcpServer(int port){
+    public static void tcpServer1(int port) {
         System.out.println("TCP Server Test");
         System.out.println("port : " + port + "\n");
 
@@ -24,7 +24,7 @@ public class EchoServer {
             while ((inputLine = in.readLine()) != null) {
                 System.out.println("Client>" + inputLine);
                 out.println(inputLine);
-                if (inputLine.equals("exit")){
+                if (inputLine.equals("exit")) {
                     break;
                 }
             }
@@ -34,7 +34,60 @@ public class EchoServer {
             clientSocket.close();
             serverSocket.close();
 
-        } catch (IOException ie){
+        } catch (IOException ie) {
+            System.err.println("Exception caught when trying to listen on port " + port + " or listening for a connection");
+            System.err.println(ie.getMessage());
+        }
+    }
+
+    public static void tcpServer(int port) {
+        System.out.println("TCP Server Test");
+        System.out.println("port : " + port + "\n");
+
+        try {
+            ServerSocket serverSocket = new ServerSocket(port);
+            System.out.println("Server is ready");
+            System.out.println("Waiting connection\n");
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Connect completed\n");
+
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+
+            while (true) {
+
+                int count = 1;
+                byte[] inBuf = new byte[1024];
+
+                int inChar = clientSocket.getInputStream().read();
+                int idx = 0;
+
+                while (inChar != 10) {
+                    inBuf[idx] = (byte) inChar;
+                    if (idx == 1023) {
+                        System.out.println("Client>" + new String(inBuf, 0, idx));
+                        out.println(new String(inBuf, 0, idx));
+                        inBuf = new byte[1024];
+                        idx = -1;
+                        count += 1;
+                    }
+                    idx += 1;
+                    inChar = clientSocket.getInputStream().read();
+                }
+                if (idx != 0 || count == 1) {
+                    System.out.println("Client>" + new String(inBuf, 0, idx));
+                    out.println(new String(inBuf, 0, idx));
+                }
+                if (new String(inBuf, 0, idx).equals("exit") && count == 1) {
+                    break;
+                }
+            }
+
+            out.close();
+            clientSocket.close();
+            serverSocket.close();
+
+        } catch (IOException ie) {
             System.err.println("Exception caught when trying to listen on port " + port + " or listening for a connection");
             System.err.println(ie.getMessage());
         }
@@ -44,15 +97,15 @@ public class EchoServer {
         System.out.println("UDP Server Test");
         System.out.println("port : " + port + "\n");
 
-        try{
+        try {
             DatagramSocket socket = new DatagramSocket(port);
-            while(true){
+            while (true) {
                 byte[] buf = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
                 socket.receive(packet);
 
-                String dataGot = new String(packet.getData(),0, packet.getLength());
+                String dataGot = new String(packet.getData(), 0, packet.getLength());
                 InetAddress address = packet.getAddress();
                 int clientPort = packet.getPort();
                 System.out.println("Client(Port:" + clientPort + ")>" + dataGot);
@@ -62,7 +115,7 @@ public class EchoServer {
 
                 socket.send(packet);
 
-                if (parts.length == 2 && parts[1].equals("exit")){
+                if (parts.length == 2 && parts[1].equals("exit")) {
                     break;
                 }
             }
@@ -85,15 +138,15 @@ public class EchoServer {
         List<String> sequenceList = new ArrayList<>();
         Set<String> missing = new HashSet<>();
 
-        try{
+        try {
             DatagramSocket socket = new DatagramSocket(portNumber);
-            while(true){
+            while (true) {
                 byte[] buf = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
                 socket.receive(packet);
 
-                String dataGot = new String(packet.getData(),0, packet.getLength());
+                String dataGot = new String(packet.getData(), 0, packet.getLength());
                 InetAddress address = packet.getAddress();
                 int clientPort = packet.getPort();
                 System.out.println("Client(Port:" + clientPort + ")>" + dataGot);
@@ -101,10 +154,10 @@ public class EchoServer {
 
                 int sequenceNum = Integer.parseInt(parts[0]);
                 //예상되는 번호의 데이터가 들어오지 않았는데 처음보는 데이터일 경우
-                if (sequenceNum != expectedSequenceNum && !sequenceList.contains(parts[0])){
+                if (sequenceNum != expectedSequenceNum && !sequenceList.contains(parts[0])) {
                     //처음보는 데이터가 누락된 데이터였을 경우
-                    if (missing.contains(Integer.toString(sequenceNum))){
-                        System.out.println("missed packet(" +sequenceNum+ ")recovered");
+                    if (missing.contains(Integer.toString(sequenceNum))) {
+                        System.out.println("missed packet(" + sequenceNum + ")recovered");
                         missing.remove(Integer.toString(sequenceNum));
                         sequenceList.add(Integer.toString(sequenceNum));
                         continue;
@@ -115,29 +168,29 @@ public class EchoServer {
                     List<String> sortedList = new ArrayList<>(sequenceSet);
                     Collections.sort(sortedList);
                     //새롭게 알게된 누락된 데이터를 기록
-                    for (int i=1;i<=sequenceNum;i++){
-                        if (!sortedList.contains(Integer.toString(i))){
-                            System.out.println("packet("+i+")missed");
+                    for (int i = 1; i <= sequenceNum; i++) {
+                        if (!sortedList.contains(Integer.toString(i))) {
+                            System.out.println("packet(" + i + ")missed");
                             missing.add(Integer.toString(i));
                         }
                     }
 
                     sequenceList.add(Integer.toString(sequenceNum));
-                    expectedSequenceNum = sequenceNum+1;
+                    expectedSequenceNum = sequenceNum + 1;
                     //중복된 데이터가 들어온 경우
                 } else if (sequenceNum != expectedSequenceNum && sequenceList.contains(parts[0])) {
                     System.out.println("packet(" + sequenceNum + ")repeated");
                     //예상한 데이터가 들어온 경우
-                } else if (sequenceNum == expectedSequenceNum){
+                } else if (sequenceNum == expectedSequenceNum) {
                     sequenceList.add(Integer.toString(sequenceNum));
-                    expectedSequenceNum = sequenceNum+1;
+                    expectedSequenceNum = sequenceNum + 1;
                 }
 
                 packet = new DatagramPacket(buf, buf.length, address, clientPort);
 
                 socket.send(packet);
 
-                if (parts.length == 3 && parts[2].equals("exit")){
+                if (parts.length == 3 && parts[2].equals("exit")) {
                     break;
                 }
             }

@@ -8,11 +8,10 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class EchoClient {
-    public static void tcpClient1(int port, String hostName) {
+    public static void tcpClient11(int port, String hostName) {
         System.out.println("TCP Client Test");
 
         try {
-
             Socket echoSocket = new Socket(hostName, port);
             System.out.println("port : " + port + "\n");
             PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
@@ -44,7 +43,7 @@ public class EchoClient {
         }
     }
 
-    public static void tcpClient(int port, String hostName) {
+    public static void tcpClient2(int port, String hostName) {
         System.out.println("TCP Client Test");
 
         try {
@@ -80,6 +79,8 @@ public class EchoClient {
             System.exit(1);
         }
     }
+
+    //괴물코드
 //
 //    public static int buffergogo(PrintWriter out,int count) throws IOException {
 //        count += 1;
@@ -116,28 +117,77 @@ public class EchoClient {
         int inputChar = System.in.read();
         int idx = 0;
         while (inputChar != 10) {
-            stdIn[idx] = (byte)inputChar;
-            if (idx == 1023){
-                out.println(new String(stdIn,0,idx));
+            stdIn[idx] = (byte) inputChar;
+            if (idx == 1023) {
+                out.println(new String(stdIn, 0, idx));
                 stdIn = new byte[1024];
                 count += 1;
                 idx = -1;
             }
-            idx +=1;
+            idx += 1;
             inputChar = System.in.read();
 
         }
 
-        if (count ==1 || idx != 0) {
+        if (count == 1 || idx != 0) {
             out.println(new String(stdIn, 0, idx));
-        }
-        else{
-            count-=1;
+        } else {
+            count -= 1;
         }
         return count;
 
     }
 
+
+    public static void tcpClient(int port, String hostName) {
+        System.out.println("TCP Client Test");
+        int serverBufSize = 1024;
+        try {
+            Socket echoSocket = new Socket(hostName, port);
+            System.out.println("port : " + port + "\n");
+            PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
+            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+            String userInput;
+            String input;
+
+            boolean on = true;
+            while (on && (userInput = stdIn.readLine()) != null) {
+                int echoCount = 1;
+                if (userInput.length() % serverBufSize == 0) {
+                    echoCount = userInput.length() / serverBufSize;
+                } else {
+                    echoCount = (userInput.length() / serverBufSize) + 1;
+                }
+                out.println(userInput);
+                for (int i = 1; i <= echoCount; i++) {
+                    System.out.println("echo>" + (input = in.readLine()));
+                    if (input.equals("exit")) {
+                        on = false;
+                        System.out.println(on);
+                        break;
+                    }
+                }
+            }
+
+            stdIn.close();
+            in.close();
+            out.close();
+            echoSocket.close();
+
+        } catch (UnknownHostException ue) {
+            System.err.println("Don't know about host " + hostName);
+            System.err.println(ue.getMessage());
+            System.exit(1);
+        } catch (IOException ie) {
+            System.err.println("Couldn't get I/O for the connection to " + hostName);
+            System.err.println(ie.getMessage());
+            System.exit(1);
+        }
+    }
+
+
+    //고장난클라이언트
     public static void tcpClient123(int port, String hostName) {
         System.out.println("TCP Client Test");
 
@@ -155,7 +205,7 @@ public class EchoClient {
                 int bytesRead = System.in.read(stdInBuf);
 
                 System.out.println("BytesRead Size : " + bytesRead);
-                userInput = new String(stdInBuf, 0, bytesRead-1);
+                userInput = new String(stdInBuf, 0, bytesRead - 1);
                 System.out.println("userInput : " + userInput);
                 out.println(userInput);
                 System.out.println("echo>" + (input = in.readLine()));
@@ -179,8 +229,6 @@ public class EchoClient {
             System.exit(1);
         }
     }
-
-
 
 
     public static void udpClient(int port, String hostName) {
