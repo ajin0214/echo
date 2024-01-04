@@ -57,8 +57,8 @@ public class EchoClient {
             boolean on = true;
 
             while (on) {
-                int count = 0;
-                count = buffergogo(out,count);
+
+                int count = buffergogo(out);
 
                 for (int i = 0; i < count; i++) {
                     System.out.println("echo>" + (input = in.readLine()));
@@ -67,17 +67,6 @@ public class EchoClient {
                         break;
                     }
                 }
-
-//종료되지않는 문제
-//                while ((input = in.readLine()) != null) {
-//                    System.out.println("echo>" + input);
-//                    if (input.equals("exit")) {
-//                        on = false;
-//                        break;
-//                    }
-//                }
-
-
             }
 
 
@@ -91,32 +80,62 @@ public class EchoClient {
             System.exit(1);
         }
     }
+//
+//    public static int buffergogo(PrintWriter out,int count) throws IOException {
+//        count += 1;
+//        byte[] stdIn = new byte[1024];
+//        int inputChar = System.in.read();
+//        int idx = 0;
+//        while (inputChar != 10) {
+//            stdIn[idx] = (byte)inputChar;
+//            if (idx == 1023){
+//                out.println(new String(stdIn,0,idx));
+//                count = buffergogo(out,count);
+//                break;
+//            }
+//            inputChar = System.in.read();
+//            idx += 1;
+//        }
+//        if (idx == 1023){
+//            return count;
+//        }
+//        if ( count <= 1 || idx != 0 ){
+//            out.println(new String(stdIn,0,idx));
+//        }else{
+//            count-=1;
+//        }
+//
+//        return count;
+//    }
 
-    public static int buffergogo(PrintWriter out,int count) throws IOException {
-        count += 1;
+    public static int buffergogo(PrintWriter out) throws IOException {
+
+        int count = 1;
         byte[] stdIn = new byte[1024];
+
         int inputChar = System.in.read();
         int idx = 0;
         while (inputChar != 10) {
             stdIn[idx] = (byte)inputChar;
             if (idx == 1023){
                 out.println(new String(stdIn,0,idx));
-                count = buffergogo(out,count);
-                break;
+                stdIn = new byte[1024];
+                count += 1;
+                idx = -1;
             }
+            idx +=1;
             inputChar = System.in.read();
-            idx += 1;
-        }
-        if (idx == 1023){
-            return count;
-        }
-        if ( count <= 1 || idx != 0 ){
-            out.println(new String(stdIn,0,idx));
-        }else{
-            count-=1;
+
         }
 
+        if (count ==1 || idx != 0) {
+            out.println(new String(stdIn, 0, idx));
+        }
+        else{
+            count-=1;
+        }
         return count;
+
     }
 
     public static void tcpClient123(int port, String hostName) {
