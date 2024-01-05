@@ -40,6 +40,8 @@ public class EchoServer {
         }
     }
 
+
+    //팔다리가 두세개
     public static void tcpServer_12(int port) {
         System.out.println("TCP Server Test");
         System.out.println("port : " + port + "\n");
@@ -105,19 +107,21 @@ public class EchoServer {
             System.out.println("Connect completed\n");
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
+            int bufferSize = 4;
+
             while (true) {
                 byte[] buf;
                 int bufsize;
                 String in = "";
                 do {
-                    buf = new byte[4];
+                    buf = new byte[bufferSize];
                     bufsize = clientSocket.getInputStream().read(buf);
-                    in += new String(buf,0,bufsize);
-                }while(buf[bufsize-1] != 10);
-                in = in.substring(0,in.length()-1);
+                    in += new String(buf, 0, bufsize);
+                } while (buf[bufsize - 1] != 10);
+                in = in.substring(0, in.length() - 1);
                 System.out.println("Client>" + in);
                 out.println(in);
-                if (in.equals("exit")){
+                if (in.equals("exit")) {
                     break;
                 }
             }

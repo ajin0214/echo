@@ -145,31 +145,32 @@ public class EchoClient {
             PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
 
-            while (true) {
+            int stdBufferSize = 4;
+            int bufferSize = 4;
 
-                byte[] stdBuf = new byte[16];
-                int stdBufsize = 0;
-                String userInput="";
+            while (true) {
+                byte[] stdBuf;
+                int stdBufsize;
+                String userInput = "";
                 do {
-                    stdBuf = new byte[4];
+                    stdBuf = new byte[stdBufferSize];
                     stdBufsize = System.in.read(stdBuf);
                     userInput += new String(stdBuf, 0, stdBufsize);
                 } while (stdBuf[stdBufsize - 1] != 10);
-                userInput = userInput.substring(0,userInput.length()-1);
+                userInput = userInput.substring(0, userInput.length() - 1);
                 out.println(userInput);
 
                 byte[] buf;
                 int bufsize;
                 String echo = "";
-
-                do{
-                    buf = new byte[4];
+                do {
+                    buf = new byte[bufferSize];
                     bufsize = echoSocket.getInputStream().read(buf);
-                    echo += new String(buf,0,bufsize);
-                }while(buf[bufsize-1] != 10);
-                echo = echo.substring(0,echo.length()-1);
+                    echo += new String(buf, 0, bufsize);
+                } while (buf[bufsize - 1] != 10);
+                echo = echo.substring(0, echo.length() - 1);
                 System.out.println("echo>" + echo);
-                if (echo.equals("exit")){
+                if (echo.equals("exit")) {
                     break;
                 }
             }
