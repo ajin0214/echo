@@ -153,13 +153,17 @@ public class EchoClient {
 
             boolean on = true;
             while (on && (userInput = stdIn.readLine()) != null) {
-                int echoCount = 1;
+                int echoCount;
                 if (userInput.length() % serverBufSize == 0) {
                     echoCount = userInput.length() / serverBufSize;
                 } else {
                     echoCount = (userInput.length() / serverBufSize) + 1;
                 }
                 out.println(userInput);
+                if (echoCount == 0){
+                    echoCount = 1;
+                }
+                System.out.println(echoCount);
                 for (int i = 1; i <= echoCount; i++) {
                     System.out.println("echo>" + (input = in.readLine()));
                     if (input.equals("exit")) {
