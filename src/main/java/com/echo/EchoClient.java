@@ -2,13 +2,11 @@ package com.echo;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EchoClient {
-    public static void tcpClient11(int port, String hostName) {
+    public static void tcpClient12341(int port, String hostName) {
         System.out.println("TCP Client Test");
 
         try {
@@ -141,41 +139,42 @@ public class EchoClient {
 
     public static void tcpClient(int port, String hostName) {
         System.out.println("TCP Client Test");
-        int serverBufSize = 1024;
         try {
             Socket echoSocket = new Socket(hostName, port);
             System.out.println("port : " + port + "\n");
             PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(echoSocket.getInputStream()));
             BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-            String userInput;
-            String input;
 
-            boolean on = true;
-            while (on && (userInput = stdIn.readLine()) != null) {
-                int echoCount;
-                if (userInput.length() % serverBufSize == 0) {
-                    echoCount = userInput.length() / serverBufSize;
-                } else {
-                    echoCount = (userInput.length() / serverBufSize) + 1;
-                }
+            while (true) {
+
+                byte[] stdBuf = new byte[16];
+                int stdBufsize = 0;
+                String userInput="";
+                do {
+                    stdBuf = new byte[4];
+                    stdBufsize = System.in.read(stdBuf);
+                    userInput += new String(stdBuf, 0, stdBufsize);
+                } while (stdBuf[stdBufsize - 1] != 10);
+                userInput = userInput.substring(0,userInput.length()-1);
                 out.println(userInput);
-                if (echoCount == 0){
-                    echoCount = 1;
-                }
-                System.out.println(echoCount);
-                for (int i = 1; i <= echoCount; i++) {
-                    System.out.println("echo>" + (input = in.readLine()));
-                    if (input.equals("exit")) {
-                        on = false;
-                        System.out.println(on);
-                        break;
-                    }
+
+                byte[] buf;
+                int bufsize;
+                String echo = "";
+
+                do{
+                    buf = new byte[4];
+                    bufsize = echoSocket.getInputStream().read(buf);
+                    echo += new String(buf,0,bufsize);
+                }while(buf[bufsize-1] != 10);
+                echo = echo.substring(0,echo.length()-1);
+                System.out.println("echo>" + echo);
+                if (echo.equals("exit")){
+                    break;
                 }
             }
 
             stdIn.close();
-            in.close();
             out.close();
             echoSocket.close();
 
@@ -192,7 +191,7 @@ public class EchoClient {
 
 
     //고장난클라이언트
-    public static void tcpClient123(int port, String hostName) {
+    public static void tcpClient12345(int port, String hostName) {
         System.out.println("TCP Client Test");
 
         try {
@@ -204,7 +203,7 @@ public class EchoClient {
             String input;
             String userInput;
 
-            while (true) {
+            do {
                 byte[] stdInBuf = new byte[1024];
                 int bytesRead = System.in.read(stdInBuf);
 
@@ -213,10 +212,7 @@ public class EchoClient {
                 System.out.println("userInput : " + userInput);
                 out.println(userInput);
                 System.out.println("echo>" + (input = in.readLine()));
-                if (input.equals("exit")) {
-                    break;
-                }
-            }
+            } while (!input.equals("exit"));
 
 
             in.close();

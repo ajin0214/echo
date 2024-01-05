@@ -40,7 +40,7 @@ public class EchoServer {
         }
     }
 
-    public static void tcpServer(int port) {
+    public static void tcpServer_12(int port) {
         System.out.println("TCP Server Test");
         System.out.println("port : " + port + "\n");
 
@@ -79,6 +79,45 @@ public class EchoServer {
                     out.println(new String(inBuf, 0, idx));
                 }
                 if (new String(inBuf, 0, idx).equals("exit") && count == 1) {
+                    break;
+                }
+            }
+
+            out.close();
+            clientSocket.close();
+            serverSocket.close();
+
+        } catch (IOException ie) {
+            System.err.println("Exception caught when trying to listen on port " + port + " or listening for a connection");
+            System.err.println(ie.getMessage());
+        }
+    }
+
+    public static void tcpServer(int port) {
+        System.out.println("TCP Server Test");
+        System.out.println("port : " + port + "\n");
+
+        try {
+            ServerSocket serverSocket = new ServerSocket(port);
+            System.out.println("Server is ready");
+            System.out.println("Waiting connection\n");
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Connect completed\n");
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+
+            while (true) {
+                byte[] buf;
+                int bufsize;
+                String in = "";
+                do {
+                    buf = new byte[4];
+                    bufsize = clientSocket.getInputStream().read(buf);
+                    in += new String(buf,0,bufsize);
+                }while(buf[bufsize-1] != 10);
+                in = in.substring(0,in.length()-1);
+                System.out.println("Client>" + in);
+                out.println(in);
+                if (in.equals("exit")){
                     break;
                 }
             }
