@@ -3,6 +3,7 @@ package com.echo;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class EchoClient {
@@ -143,20 +144,20 @@ public class EchoClient {
             Socket echoSocket = new Socket(hostName, port);
             System.out.println("port : " + port + "\n");
             PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
-            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
 
-            int stdBufferSize = 4;
-            int bufferSize = 4;
+            int stdBufferSize = 8;
+            int bufferSize = 8;
 
             while (true) {
                 byte[] stdBuf;
-                int stdBufsize;
+                int stdSize;
                 String userInput = "";
                 do {
                     stdBuf = new byte[stdBufferSize];
-                    stdBufsize = System.in.read(stdBuf);
-                    userInput += new String(stdBuf, 0, stdBufsize);
-                } while (stdBuf[stdBufsize - 1] != 10);
+                    stdSize = System.in.read(stdBuf);
+                    userInput += new String(stdBuf, 0, stdSize);
+                    System.out.println(Arrays.toString(stdBuf));
+                } while (stdBuf[stdSize - 1] != 10);
                 userInput = userInput.substring(0, userInput.length() - 1);
                 out.println(userInput);
 
@@ -175,7 +176,6 @@ public class EchoClient {
                 }
             }
 
-            stdIn.close();
             out.close();
             echoSocket.close();
 
@@ -232,7 +232,7 @@ public class EchoClient {
     }
 
 
-    public static void udpClient(int port, String hostName) {
+    public static void udpClient12(int port, String hostName) {
         System.out.println("UDP Client Test");
         System.out.println("port : " + port + "\n");
 
@@ -269,5 +269,61 @@ public class EchoClient {
             System.err.println(ie.getMessage());
             System.exit(1);
         }
+
+
+    }
+
+    public static void udpClient(int port, String hostName) {
+        System.out.println("UDP Client Test");
+        System.out.println("port : " + port + "\n");
+
+        try {
+            InetAddress address = InetAddress.getByName(hostName);
+            DatagramSocket socket = new DatagramSocket();
+
+            int serverBufferSize = 8;
+            int headerSize = 2;
+            int stdBufferSize = serverBufferSize - headerSize;
+            byte[] buf;
+
+            while (true) {
+                //유저입력을 받아서 바로 패킷으로 전송
+                byte[] stdBuf;
+                int stdLength;
+                int sequenceNumber = 1;
+                DatagramPacket packet;
+                do {
+                    stdBuf = new byte[stdBufferSize];
+                    stdLength = System.in.read(stdBuf);
+                    buf = (sequenceNumber + ":" + new String(stdBuf, 0, stdLength)).getBytes();
+                    packet = new DatagramPacket(buf, buf.length, address, port);
+                    socket.send(packet);
+                    sequenceNumber += 1;
+                } while (stdBuf[stdLength - 1] != 10);
+
+                //에코로 돌아온 데이터 합치기
+                String input = "";
+                do{
+                    buf = new byte[8];
+                    packet = new DatagramPacket(buf,buf.length);
+                    socket.receive(packet);
+                    input += new String(packet.getData(),0,packet.getLength());
+                }while((packet.getData()[packet.getLength()-1]) != 10);
+                //합쳐진 문자열 출력
+                System.out.println("echo>" + input.substring(0, input.length() - 1));
+
+                if (input.substring(0, input.length() - 1).equals("exit")) {
+                    break;
+                }
+            }
+            socket.close();
+
+        } catch (IOException ie) {
+            System.err.println("Couldn't get I/O");
+            System.err.println(ie.getMessage());
+            System.exit(1);
+        }
+
+
     }
 }

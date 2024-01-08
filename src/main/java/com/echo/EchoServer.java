@@ -136,14 +136,14 @@ public class EchoServer {
         }
     }
 
-    public static void udpServer(int port) {
+    public static void udpServer1(int port) {
         System.out.println("UDP Server Test");
         System.out.println("port : " + port + "\n");
 
         try {
             DatagramSocket socket = new DatagramSocket(port);
             while (true) {
-                byte[] buf = new byte[1024];
+                byte[] buf = new byte[8];
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
                 socket.receive(packet);
@@ -171,6 +171,70 @@ public class EchoServer {
             System.exit(1);
         }
     }
+
+
+    public static void udpServer(int port) {
+        System.out.println("UDP Server Test");
+        System.out.println("port : " + port + "\n");
+
+        try {
+            DatagramSocket socket;
+            socket = new DatagramSocket(port);
+            int clientBufferSize = 8;
+
+            while (true) {
+                //서버로부터 패킷을 받을 준비
+                String input = "";
+                DatagramPacket packet;
+                byte[] buf;
+                InetAddress address;
+                int clientPort;
+                //패킷을 받아서 문자열로 합쳐서 저장하기
+                do {
+                    buf = new byte[8];
+                    packet = new DatagramPacket(buf, buf.length);
+
+                    socket.receive(packet);
+
+                    String dataGot = new String(packet.getData(), 0, packet.getLength());
+                    address = packet.getAddress();
+                    clientPort = packet.getPort();
+                    String[] parts = dataGot.split(":", 2);
+                    input += parts[1];
+                } while ((packet.getData()[packet.getLength() - 1]) != 10);
+                //받은 문자열 출력
+                System.out.println("Client>" + input.substring(0, input.length() - 1));
+
+                //받은 문자열을 다시 보내기 위해 쪼갤 준비
+                byte[] byteInput = input.getBytes();
+
+                List<byte[]> chunks = new ArrayList<>();
+                int start = 0;
+                while (start < byteInput.length) {
+                    int end = Math.min(byteInput.length, start + clientBufferSize);
+                    byte[] chunk = new byte[end - start];
+                    System.arraycopy(byteInput, start, chunk, 0, chunk.length);
+                    chunks.add(chunk);
+                    start += clientBufferSize;
+                }
+                //쪼개진 문자열을 패킷으로 전달
+                for (byte[] chunk : chunks) {
+                    packet = new DatagramPacket(chunk, chunk.length, address, clientPort);
+                    socket.send(packet);
+                }
+                if (input.substring(0, input.length() - 1).equals("exit")) {
+                    break;
+                }
+            }
+            socket.close();
+
+        } catch (IOException ie) {
+            System.err.println("Couldn't get I/O");
+            System.err.println(ie.getMessage());
+            System.exit(1);
+        }
+    }
+
 
     public static void udpServer2(String arg) {
         System.out.println("UDP Server Test");
