@@ -205,23 +205,19 @@ public class EchoServer {
                 //받은 문자열 출력
                 System.out.println("Client>" + input.substring(0, input.length() - 1));
 
-                //받은 문자열을 다시 보내기 위해 쪼갤 준비
+                //받은 문자열을 다시 보내기 위해 쪼개기
                 byte[] byteInput = input.getBytes();
-
-                List<byte[]> chunks = new ArrayList<>();
                 int start = 0;
                 while (start < byteInput.length) {
                     int end = Math.min(byteInput.length, start + clientBufferSize);
                     byte[] chunk = new byte[end - start];
                     System.arraycopy(byteInput, start, chunk, 0, chunk.length);
-                    chunks.add(chunk);
-                    start += clientBufferSize;
-                }
-                //쪼개진 문자열을 패킷으로 전달
-                for (byte[] chunk : chunks) {
+                    //쪼갠 바이트배열 패킷으로 옮기기
                     packet = new DatagramPacket(chunk, chunk.length, address, clientPort);
                     socket.send(packet);
+                    start += clientBufferSize;
                 }
+                //종료조건
                 if (input.substring(0, input.length() - 1).equals("exit")) {
                     break;
                 }

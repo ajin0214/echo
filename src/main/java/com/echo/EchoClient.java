@@ -311,7 +311,7 @@ public class EchoClient {
                 }while((packet.getData()[packet.getLength()-1]) != 10);
                 //합쳐진 문자열 출력
                 System.out.println("echo>" + input.substring(0, input.length() - 1));
-
+                //종료조건
                 if (input.substring(0, input.length() - 1).equals("exit")) {
                     break;
                 }
