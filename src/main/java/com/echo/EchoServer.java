@@ -193,14 +193,11 @@ public class EchoServer {
                 do {
                     buf = new byte[8];
                     packet = new DatagramPacket(buf, buf.length);
-
                     socket.receive(packet);
-
-                    String dataGot = new String(packet.getData(), 0, packet.getLength());
                     address = packet.getAddress();
                     clientPort = packet.getPort();
-                    String[] parts = dataGot.split(":", 2);
-                    input += parts[1];
+                    input += new String(packet.getData(), 0, packet.getLength());
+//                    System.out.println(new String(packet.getData(), 0, packet.getLength()));
                 } while ((packet.getData()[packet.getLength() - 1]) != 10);
                 //받은 문자열 출력
                 System.out.println("Client>" + input.substring(0, input.length() - 1));
@@ -216,6 +213,7 @@ public class EchoServer {
                     packet = new DatagramPacket(chunk, chunk.length, address, clientPort);
                     socket.send(packet);
                     start += clientBufferSize;
+//                    System.out.println(Arrays.toString(chunk));
                 }
                 //종료조건
                 if (input.substring(0, input.length() - 1).equals("exit")) {

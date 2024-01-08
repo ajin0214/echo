@@ -282,23 +282,20 @@ public class EchoClient {
             DatagramSocket socket = new DatagramSocket();
 
             int serverBufferSize = 8;
-            int headerSize = 2;
-            int stdBufferSize = serverBufferSize - headerSize;
             byte[] buf;
 
             while (true) {
                 //유저입력을 받아서 바로 패킷으로 전송
                 byte[] stdBuf;
                 int stdLength;
-                int sequenceNumber = 1;
                 DatagramPacket packet;
                 do {
-                    stdBuf = new byte[stdBufferSize];
+                    stdBuf = new byte[serverBufferSize];
                     stdLength = System.in.read(stdBuf);
-                    buf = (sequenceNumber + ":" + new String(stdBuf, 0, stdLength)).getBytes();
+                    buf = (new String(stdBuf, 0, stdLength)).getBytes();
+//                    System.out.println(Arrays.toString(buf));
                     packet = new DatagramPacket(buf, buf.length, address, port);
                     socket.send(packet);
-                    sequenceNumber += 1;
                 } while (stdBuf[stdLength - 1] != 10);
 
                 //에코로 돌아온 데이터 합치기
@@ -308,6 +305,7 @@ public class EchoClient {
                     packet = new DatagramPacket(buf,buf.length);
                     socket.receive(packet);
                     input += new String(packet.getData(),0,packet.getLength());
+//                    System.out.println(new String(packet.getData(),0,packet.getLength()));
                 }while((packet.getData()[packet.getLength()-1]) != 10);
                 //합쳐진 문자열 출력
                 System.out.println("echo>" + input.substring(0, input.length() - 1));
