@@ -95,7 +95,7 @@ public class EchoServer {
         }
     }
 
-    public static void tcpServer(int port) {
+    public static void tcpServerbuffer(int port) {
         System.out.println("TCP Server Test");
         System.out.println("port : " + port + "\n");
 
@@ -135,15 +135,59 @@ public class EchoServer {
             System.err.println(ie.getMessage());
         }
     }
+    public static void tcpServer(int port) {
+        System.out.println("TCP Server Test");
+        System.out.println("port : " + port + "\n");
 
-    public static void udpServer1(int port) {
+        try {
+            ServerSocket serverSocket = new ServerSocket(port);
+            System.out.println("Server is ready");
+            System.out.println("Waiting connection\n");
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Connect completed\n");
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            int headerSize = 4;
+            int payloadSize;
+
+            int bufferSize = 4;
+
+            while (true) {
+                byte[] buf;
+                int bufsize;
+                String in = "";
+                buf = new byte[headerSize];
+                bufsize = clientSocket.getInputStream().read(buf);
+                do {
+                    buf = new byte[bufferSize];
+                    bufsize = clientSocket.getInputStream().read(buf);
+                    in += new String(buf, 0, bufsize);
+                } while (buf[bufsize - 1] != 10);
+                in = in.substring(0, in.length() - 1);
+                System.out.println("Client>" + in);
+                out.println(in);
+                if (in.equals("exit")) {
+                    break;
+                }
+            }
+
+            out.close();
+            clientSocket.close();
+            serverSocket.close();
+
+        } catch (IOException ie) {
+            System.err.println("Exception caught when trying to listen on port " + port + " or listening for a connection");
+            System.err.println(ie.getMessage());
+        }
+    }
+
+    public static void udpServer(int port) {
         System.out.println("UDP Server Test");
         System.out.println("port : " + port + "\n");
 
         try {
             DatagramSocket socket = new DatagramSocket(port);
             while (true) {
-                byte[] buf = new byte[8];
+                byte[] buf = new byte[4];
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
                 socket.receive(packet);
@@ -152,13 +196,16 @@ public class EchoServer {
                 InetAddress address = packet.getAddress();
                 int clientPort = packet.getPort();
                 System.out.println("Client(Port:" + clientPort + ")>" + dataGot);
-                String[] parts = dataGot.split(":");
+//
+//                byte[] test = new byte[buf.length*2];
+//                System.arraycopy(buf,0,test,0,buf.length);
+//                System.arraycopy(buf,0,test,buf.length,buf.length);
 
                 packet = new DatagramPacket(buf, buf.length, address, clientPort);
-
+//                System.out.println("out>" + new String(buf));
                 socket.send(packet);
 
-                if (parts.length == 2 && parts[1].equals("exit")) {
+                if (dataGot.equals("exit")) {
                     break;
                 }
             }
@@ -173,7 +220,7 @@ public class EchoServer {
     }
 
 
-    public static void udpServer(int port) {
+    public static void udpServer12(int port) {
         System.out.println("UDP Server Test");
         System.out.println("port : " + port + "\n");
 
