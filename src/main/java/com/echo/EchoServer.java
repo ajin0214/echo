@@ -151,7 +151,7 @@ public class EchoServer {
             System.out.println("Connect completed\n");
             OutputStream out = clientSocket.getOutputStream();
 
-            int bufferSize = 1024;
+            int bufferSize = 15;
 
             while (true) {
                 //데이터받기~~
@@ -160,16 +160,14 @@ public class EchoServer {
                 byte[] buf = new byte[bufferSize];
                 int bufLen = clientSocket.getInputStream().read(buf);
                 //헤더사이즈 확인하기
-                int headerSize = buf[0] * 10 + buf[1];
+                int headerSize = ((buf[0] & 0xFF) << 24) | ((buf[1] & 0xFF) << 16) | ((buf[2] & 0xFF) << 8) | (buf[3] & 0xFF);
                 //타입 확인하기
-                int bufType = buf[3];
-                int payloadSize = 0;
-                //페이로드의 길이 확인하기
-                for (int i = 1; i <= headerSize - 4; i++) {
-                    payloadSize += (int) (buf[3 + i] * Math.pow(10, headerSize - 4 - i));
-                }
+                int bufType = buf[5];
+                //페이로드 길이 확인
+                int payloadSize = ((buf[6] & 0xFF) << 24) | ((buf[7] & 0xFF) << 16) | ((buf[8] & 0xFF) << 8) | (buf[9] & 0xFF);
                 //페이로드 확인하기
                 in += new String(buf, headerSize, min(bufLen - headerSize, payloadSize));
+                System.out.println(in);
                 //첫 버퍼에 다 못담은 페이로드 확인하기
                 for (int i = 1; i < (headerSize + payloadSize) / (float) bufferSize; i++) {
                     buf = new byte[bufferSize];
@@ -188,24 +186,29 @@ public class EchoServer {
 
         //에코보내기
             //헤더붙이기
+                //데이터타입 스트링으로 변환
                 if (bufType == 0) {
                     iin = String.valueOf(iin);
                 }
+                //데이터길이 구하기
                 payloadSize = iin.toString().length();
-                int payloadSizeLen = String.valueOf(payloadSize).length();
-                byte[] dataToecho = new byte[2 + 2 + payloadSizeLen + payloadSize];
-
-                headerSize = 4 + payloadSizeLen;
-                dataToecho[0] = (byte) (headerSize / 10);
-                dataToecho[1] = (byte) (headerSize % 10);
-
-                dataToecho[2] = (byte) 0;
-                dataToecho[3] = (byte) bufType;
-
-                for (int i = 0; i<payloadSizeLen; i++){
-                    dataToecho[4+i] = (byte) Character.getNumericValue(String.valueOf(payloadSize).charAt(i));
-                }
-
+                //바이트배열 선언
+                byte[] dataToecho = new byte[10 + payloadSize];
+                //헤더사이즈 담기
+                headerSize = 10;
+                dataToecho[0] = (byte) ((headerSize >> 24) & 0xFF);
+                dataToecho[1] = (byte) ((headerSize >> 16) & 0xFF);
+                dataToecho[2] = (byte) ((headerSize >> 8) & 0xFF);
+                dataToecho[3] = (byte) (headerSize & 0xFF);
+                //데이터타입 담기
+                dataToecho[4] = (byte) 0;
+                dataToecho[5] = (byte) bufType;
+                //페이로드 길이 담기
+                dataToecho[6] = (byte) ((payloadSize >> 24) & 0xFF);
+                dataToecho[7] = (byte) ((payloadSize >> 16) & 0xFF);
+                dataToecho[8] = (byte) ((payloadSize >> 8) & 0xFF);
+                dataToecho[9] = (byte) (payloadSize & 0xFF);
+                //페이로드 담기
                 System.arraycopy(iin.toString().getBytes(),0,dataToecho, headerSize, payloadSize);
 
                 System.out.println(Arrays.toString(dataToecho));
