@@ -4,6 +4,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 public class EchoServer {
 
     public static void tcpServer1(int port) {
@@ -135,6 +138,7 @@ public class EchoServer {
             System.err.println(ie.getMessage());
         }
     }
+
     public static void tcpServer(int port) {
         System.out.println("TCP Server Test");
         System.out.println("port : " + port + "\n");
@@ -145,27 +149,72 @@ public class EchoServer {
             System.out.println("Waiting connection\n");
             Socket clientSocket = serverSocket.accept();
             System.out.println("Connect completed\n");
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-            int headerSize = 4;
-            int payloadSize;
+            OutputStream out = clientSocket.getOutputStream();
 
-            int bufferSize = 4;
+            int bufferSize = 1024;
 
             while (true) {
-                byte[] buf;
-                int bufsize;
+                //데이터받기~~
                 String in = "";
-                buf = new byte[headerSize];
-                bufsize = clientSocket.getInputStream().read(buf);
-                do {
+                //버퍼로 뜨기
+                byte[] buf = new byte[bufferSize];
+                int bufLen = clientSocket.getInputStream().read(buf);
+                //헤더사이즈 확인하기
+                int headerSize = buf[0] * 10 + buf[1];
+                //타입 확인하기
+                int bufType = buf[3];
+                int payloadSize = 0;
+                //페이로드의 길이 확인하기
+                for (int i = 1; i <= headerSize - 4; i++) {
+                    payloadSize += (int) (buf[3 + i] * Math.pow(10, headerSize - 4 - i));
+                }
+                //페이로드 확인하기
+                in += new String(buf, headerSize, min(bufLen - headerSize, payloadSize));
+                //첫 버퍼에 다 못담은 페이로드 확인하기
+                for (int i = 1; i < (headerSize + payloadSize) / (float) bufferSize; i++) {
                     buf = new byte[bufferSize];
-                    bufsize = clientSocket.getInputStream().read(buf);
-                    in += new String(buf, 0, bufsize);
-                } while (buf[bufsize - 1] != 10);
-                in = in.substring(0, in.length() - 1);
-                System.out.println("Client>" + in);
-                out.println(in);
-                if (in.equals("exit")) {
+                    bufLen = clientSocket.getInputStream().read(buf);
+                    in += new String(buf, 0, bufLen);
+                }
+                //페이로드 타입 지정하기
+                Object iin;
+                if (bufType == 0) {
+                    iin = Integer.parseInt(in);
+                } else {
+                    iin = in;
+                }
+
+                System.out.println("Client>" + iin);
+
+        //에코보내기
+            //헤더붙이기
+                if (bufType == 0) {
+                    iin = String.valueOf(iin);
+                }
+                payloadSize = iin.toString().length();
+                int payloadSizeLen = String.valueOf(payloadSize).length();
+                byte[] dataToecho = new byte[2 + 2 + payloadSizeLen + payloadSize];
+
+                headerSize = 4 + payloadSizeLen;
+                dataToecho[0] = (byte) (headerSize / 10);
+                dataToecho[1] = (byte) (headerSize % 10);
+
+                dataToecho[2] = (byte) 0;
+                dataToecho[3] = (byte) bufType;
+
+                for (int i = 0; i<payloadSizeLen; i++){
+                    dataToecho[4+i] = (byte) Character.getNumericValue(String.valueOf(payloadSize).charAt(i));
+                }
+
+                System.arraycopy(iin.toString().getBytes(),0,dataToecho, headerSize, payloadSize);
+
+                System.out.println(Arrays.toString(dataToecho));
+
+                //에코보내기
+                out.write(dataToecho);
+
+                //종료조건
+                if (iin.equals("exit")) {
                     break;
                 }
             }
@@ -253,7 +302,7 @@ public class EchoServer {
                 byte[] byteInput = input.getBytes();
                 int start = 0;
                 while (start < byteInput.length) {
-                    int end = Math.min(byteInput.length, start + clientBufferSize);
+                    int end = min(byteInput.length, start + clientBufferSize);
                     byte[] chunk = new byte[end - start];
                     System.arraycopy(byteInput, start, chunk, 0, chunk.length);
                     //쪼갠 바이트배열 패킷으로 옮기기

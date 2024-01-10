@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.lang.Math.min;
+
 public class EchoClient {
     public static void tcpClient12341(int port, String hostName) {
         System.out.println("TCP Client Test");
@@ -194,11 +196,9 @@ public class EchoClient {
         try {
             Socket echoSocket = new Socket(hostName, port);
             System.out.println("port : " + port + "\n");
-            PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
-            int headerSize = 2;
-            int payloadSize;
+            OutputStream out = echoSocket.getOutputStream();
             int stdBufferSize = 8;
-            int bufferSize = 8;
+            int bufferSize = 1024;
 
             while (true) {
 
@@ -212,40 +212,66 @@ public class EchoClient {
                     userInput += new String(stdBuf, 0, stdSize);
                 } while (stdBuf[stdSize - 1] != 10);
                 userInput = userInput.substring(0, userInput.length() - 1);
-                payloadSize = userInput.length();
-                int payloadSizeLen = String.valueOf(payloadSize).length();
-                //////유저입력받기//////
-                byte[] dataTosend = new byte[2+2+payloadSizeLen + payloadSize];
 
-                int headerLen = 2 + payloadSizeLen;
-                dataTosend[0] = (byte) (headerLen / 10);
-                dataTosend[1] = (byte) (headerLen % 10);
-                int intValue;
+//////해더 붙이기
+                //유저인풋의 길이
+                int payloadSize = userInput.length();
+                //유저인풋의 길이의 길이
+                int payloadSizeLen = String.valueOf(payloadSize).length();
+                //헤더를 포함한 바이트배열 선언
+                byte[] dataTosend = new byte[2 + 2 + payloadSizeLen + payloadSize];
+                //헤더길이 담기
+                int headerSize = 4 + payloadSizeLen;
+                dataTosend[0] = (byte) (headerSize / 10);
+                dataTosend[1] = (byte) (headerSize % 10);
+                //데이터타입 담기
                 try {
-                    intValue = Integer.parseInt(userInput);
-                    dataTosend[0] = (byte)0;
-                    dataTosend[1] = (byte)0;
-                } catch (NumberFormatException e) {
-                    dataTosend[0] = (byte)0;
-                    dataTosend[1] = (byte)1;
+                    int intValue = Integer.parseInt(userInput);
+                    dataTosend[2] = (byte) 0;
+                    dataTosend[3] = (byte) 0;
+                } catch (NumberFormatException nfe) {
+                    dataTosend[2] = (byte) 0;
+                    dataTosend[3] = (byte) 1;
+                }
+                //페이로드 길이 담기
+                for (int i = 0; i < payloadSizeLen; i++){
+                    dataTosend[4+i] = (byte) Character.getNumericValue(String.valueOf(payloadSize).charAt(i));
+                }
+                //페이로드 담기
+                System.arraycopy(userInput.getBytes(), 0, dataTosend, headerSize, payloadSize);
+
+                System.out.println(Arrays.toString(dataTosend));
+
+                //보내기
+                out.write(dataTosend);
+
+
+                //echo받기~~~
+                byte[] buf = new byte[bufferSize];
+                int bufLen = echoSocket.getInputStream().read(buf);;
+                String echo = "";
+                headerSize = buf[0] * 10 + buf[1];
+                int bufType = buf[3];
+                payloadSize = 0;
+                for (int i = 1; i<=headerSize-4;i++){
+                    payloadSize += (int) (buf[3+i] * Math.pow(10,headerSize-4-i));
+                }
+                echo += new String(buf,headerSize,min(bufLen-headerSize,payloadSize));
+                for (int i = 1; i<(headerSize+payloadSize)/(float) bufferSize;i++){
+                    buf = new byte[bufferSize];
+                    bufLen = echoSocket.getInputStream().read(buf);
+                    echo += new String(buf,0,bufLen);
+                }
+                Object eecho;
+                if (bufType == 0){
+                    eecho = Integer.parseInt(echo);
+                }else{
+                    eecho = echo;
                 }
 
-
-
-
-                out.println(userInput);
-
-                byte[] buf;
-                int bufsize;
-                String echo = "";
-                do {
-                    buf = new byte[bufferSize];
-                    bufsize = echoSocket.getInputStream().read(buf);
-                    echo += new String(buf, 0, bufsize);
-                } while (buf[bufsize - 1] != 10);
-                echo = echo.substring(0, echo.length() - 1);
-                System.out.println("echo>" + echo);
-                if (echo.equals("exit")) {
+                System.out.println("echo>" + eecho);
+                //종료조건
+                if (eecho.equals("exit")) {
                     break;
                 }
             }
