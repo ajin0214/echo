@@ -200,6 +200,7 @@ public class EchoClient {
             OutputStream out = echoSocket.getOutputStream();
             int stdBufferSize = 8;
             int bufferSize = 16;
+            int userInputBufSize = 1024*1024;
 
             while (true) {
 
@@ -207,16 +208,19 @@ public class EchoClient {
                 byte[] stdBuf;
                 int stdSize;
                 String userInput = "";
+                byte[] userInputByte = new byte[userInputBufSize];
+                int userInputIdx = 0;
                 do {
                     stdBuf = new byte[stdBufferSize];
                     stdSize = System.in.read(stdBuf);
-                    userInput += new String(stdBuf, 0, stdSize);
+                    System.arraycopy(stdBuf,0,userInputByte,userInputIdx,stdSize);
+                    userInputIdx+=stdSize;
                 } while (stdBuf[stdSize - 1] != 10);
-                userInput = userInput.substring(0, userInput.length() - 1);
-
+                userInput = new String(userInputByte,0,userInputIdx-1);
+                System.out.println(userInput);
 //////해더 붙이기
                 //유저인풋의 길이
-                int payloadSize = userInput.length();
+                int payloadSize = userInput.getBytes().length;
                 //헤더를 포함한 바이트배열 선언
                 byte[] dataTosend = new byte[10 + payloadSize];
                 //헤더길이 담기
@@ -242,36 +246,36 @@ public class EchoClient {
                 dataTosend[9] = (byte) (payloadSize & 0xFF);
                 //페이로드 담기
                 System.arraycopy(userInput.getBytes(), 0, dataTosend, headerSize, payloadSize);
-                System.out.println(userInput.getBytes(StandardCharsets.US_ASCII).length);
                 System.out.println(Arrays.toString(dataTosend));
 
                 //보내기
                 out.write(dataTosend);
 
-
                 //echo받기~~~
                 byte[] buf = new byte[bufferSize];
                 int bufLen = echoSocket.getInputStream().read(buf);;
-                String echo = "";
                 int bufType = buf[5];
                 payloadSize = ((buf[6] & 0xFF) << 24) | ((buf[7] & 0xFF) << 16) | ((buf[8] & 0xFF) << 8) | (buf[9] & 0xFF);
-                echo += new String(buf,headerSize,min(bufLen-headerSize,payloadSize));
+                byte[] echoBuf = new byte[payloadSize];
+                System.arraycopy(buf,headerSize,echoBuf,0,min(bufLen-headerSize,payloadSize));
+                int echoIdx = min(bufLen-headerSize,payloadSize);
                 for (int i = 1; i<(headerSize+payloadSize)/(float) bufferSize;i++){
                     buf = new byte[bufferSize];
                     bufLen = echoSocket.getInputStream().read(buf);
-                    echo += new String(buf,0,bufLen);
+                    System.arraycopy(buf,0,echoBuf,echoIdx,bufLen);
+                    echoIdx+=bufferSize;
                 }
-                Object eecho;
+                Object echo;
                 if (bufType == 0){
-                    eecho = Integer.parseInt(echo);
+                    echo = Integer.parseInt(new String(echoBuf));
                 }else{
-                    eecho = echo;
+                    echo = new String(echoBuf);
                 }
 
-                System.out.println("echo>" + eecho);
+                System.out.println("echo>" + echo);
 
                 //종료조건
-                if (eecho.equals("exit")) {
+                if (echo.equals("exit")) {
                     break;
                 }
             }

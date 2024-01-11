@@ -154,8 +154,6 @@ public class EchoServer {
             int bufferSize = 15;
 
             while (true) {
-                //데이터받기~~
-                String in = "";
                 //버퍼로 뜨기
                 byte[] buf = new byte[bufferSize];
                 int bufLen = clientSocket.getInputStream().read(buf);
@@ -166,32 +164,35 @@ public class EchoServer {
                 //페이로드 길이 확인
                 int payloadSize = ((buf[6] & 0xFF) << 24) | ((buf[7] & 0xFF) << 16) | ((buf[8] & 0xFF) << 8) | (buf[9] & 0xFF);
                 //페이로드 확인하기
-                in += new String(buf, headerSize, min(bufLen - headerSize, payloadSize));
-                System.out.println(in);
+                byte[] inBuf = new byte[payloadSize];
+                System.arraycopy(buf, headerSize,inBuf,0,min(bufLen - headerSize, payloadSize));
+                int inIdx = min(bufLen - headerSize, payloadSize);
                 //첫 버퍼에 다 못담은 페이로드 확인하기
                 for (int i = 1; i < (headerSize + payloadSize) / (float) bufferSize; i++) {
                     buf = new byte[bufferSize];
                     bufLen = clientSocket.getInputStream().read(buf);
-                    in += new String(buf, 0, bufLen);
+                    System.arraycopy(buf,0,inBuf,inIdx,bufLen);
+                    inIdx+=bufferSize;
                 }
+                System.out.println(Arrays.toString(inBuf));
                 //페이로드 타입 지정하기
-                Object iin;
+                Object in;
                 if (bufType == 0) {
-                    iin = Integer.parseInt(in);
+                    in = Integer.parseInt(new String(inBuf));
                 } else {
-                    iin = in;
+                    in = new String(inBuf);
                 }
 
-                System.out.println("Client>" + iin);
+                System.out.println("Client>" + in);
 
         //에코보내기
             //헤더붙이기
                 //데이터타입 스트링으로 변환
                 if (bufType == 0) {
-                    iin = String.valueOf(iin);
+                    in = String.valueOf(in);
                 }
                 //데이터길이 구하기
-                payloadSize = iin.toString().length();
+                payloadSize = in.toString().getBytes().length;
                 //바이트배열 선언
                 byte[] dataToecho = new byte[10 + payloadSize];
                 //헤더사이즈 담기
@@ -209,7 +210,7 @@ public class EchoServer {
                 dataToecho[8] = (byte) ((payloadSize >> 8) & 0xFF);
                 dataToecho[9] = (byte) (payloadSize & 0xFF);
                 //페이로드 담기
-                System.arraycopy(iin.toString().getBytes(),0,dataToecho, headerSize, payloadSize);
+                System.arraycopy(in.toString().getBytes(),0,dataToecho, headerSize, payloadSize);
 
                 System.out.println(Arrays.toString(dataToecho));
 
@@ -217,7 +218,7 @@ public class EchoServer {
                 out.write(dataToecho);
 
                 //종료조건
-                if (iin.equals("exit")) {
+                if (in.equals("exit")) {
                     break;
                 }
             }
