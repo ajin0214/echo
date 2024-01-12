@@ -2,10 +2,6 @@ package com.echo;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static java.lang.Math.min;
 
@@ -198,82 +194,15 @@ public class EchoClient {
             Socket echoSocket = new Socket(hostName, port);
             System.out.println("port : " + port + "\n");
             OutputStream out = echoSocket.getOutputStream();
-            int stdBufferSize = 8;
-            int bufferSize = 16;
-            int userInputBufSize = 1024*1024;
 
             while (true) {
-
-                //////유저입력받기//////
-                byte[] stdBuf;
-                int stdSize;
-                String userInput = "";
-                byte[] userInputByte = new byte[userInputBufSize];
-                int userInputIdx = 0;
-                do {
-                    stdBuf = new byte[stdBufferSize];
-                    stdSize = System.in.read(stdBuf);
-                    System.arraycopy(stdBuf,0,userInputByte,userInputIdx,stdSize);
-                    userInputIdx+=stdSize;
-                } while (stdBuf[stdSize - 1] != 10);
-                userInput = new String(userInputByte,0,userInputIdx-1);
-                System.out.println(userInput);
-//////해더 붙이기
-                //유저인풋의 길이
-                int payloadSize = userInput.getBytes().length;
-                //헤더를 포함한 바이트배열 선언
-                byte[] dataTosend = new byte[10 + payloadSize];
-                //헤더길이 담기
-                int headerSize = 10;
-                dataTosend[0] = (byte) ((headerSize >> 24) & 0xFF);
-                dataTosend[1] = (byte) ((headerSize >> 16) & 0xFF);
-                dataTosend[2] = (byte) ((headerSize >> 8) & 0xFF);
-                dataTosend[3] = (byte) (headerSize & 0xFF);
-                //데이터타입 담기
-                try {
-                    int intValue = Integer.parseInt(userInput);
-                    dataTosend[4] = (byte) 0;
-                    dataTosend[5] = (byte) 0;
-                } catch (NumberFormatException nfe) {
-                    dataTosend[4] = (byte) 0;
-                    dataTosend[5] = (byte) 1;
-                }
-
-                //페이로드 길이 담기
-                dataTosend[6] = (byte) ((payloadSize >> 24) & 0xFF);
-                dataTosend[7] = (byte) ((payloadSize >> 16) & 0xFF);
-                dataTosend[8] = (byte) ((payloadSize >> 8) & 0xFF);
-                dataTosend[9] = (byte) (payloadSize & 0xFF);
-                //페이로드 담기
-                System.arraycopy(userInput.getBytes(), 0, dataTosend, headerSize, payloadSize);
-                System.out.println(Arrays.toString(dataTosend));
-
-                //보내기
-                out.write(dataTosend);
-
-                //echo받기~~~
-                byte[] buf = new byte[bufferSize];
-                int bufLen = echoSocket.getInputStream().read(buf);;
-                int bufType = buf[5];
-                payloadSize = ((buf[6] & 0xFF) << 24) | ((buf[7] & 0xFF) << 16) | ((buf[8] & 0xFF) << 8) | (buf[9] & 0xFF);
-                byte[] echoBuf = new byte[payloadSize];
-                System.arraycopy(buf,headerSize,echoBuf,0,min(bufLen-headerSize,payloadSize));
-                int echoIdx = min(bufLen-headerSize,payloadSize);
-                for (int i = 1; i<(headerSize+payloadSize)/(float) bufferSize;i++){
-                    buf = new byte[bufferSize];
-                    bufLen = echoSocket.getInputStream().read(buf);
-                    System.arraycopy(buf,0,echoBuf,echoIdx,bufLen);
-                    echoIdx+=bufferSize;
-                }
-                Object echo;
-                if (bufType == 0){
-                    echo = Integer.parseInt(new String(echoBuf));
-                }else{
-                    echo = new String(echoBuf);
-                }
-
+                //유저입력받기
+                String userInput = Encode.getUserInput();
+                //데이터보내기
+                Encode.sendMassage(userInput,out);
+                //echo 받기
+                Object echo = com.echo.Decode.getPayload(echoSocket);
                 System.out.println("echo>" + echo);
-
                 //종료조건
                 if (echo.equals("exit")) {
                     break;

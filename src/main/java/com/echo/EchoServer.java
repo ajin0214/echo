@@ -151,73 +151,13 @@ public class EchoServer {
             System.out.println("Connect completed\n");
             OutputStream out = clientSocket.getOutputStream();
 
-            int bufferSize = 15;
-
             while (true) {
-                //버퍼로 뜨기
-                byte[] buf = new byte[bufferSize];
-                int bufLen = clientSocket.getInputStream().read(buf);
-                //헤더사이즈 확인하기
-                int headerSize = ((buf[0] & 0xFF) << 24) | ((buf[1] & 0xFF) << 16) | ((buf[2] & 0xFF) << 8) | (buf[3] & 0xFF);
-                //타입 확인하기
-                int bufType = buf[5];
-                //페이로드 길이 확인
-                int payloadSize = ((buf[6] & 0xFF) << 24) | ((buf[7] & 0xFF) << 16) | ((buf[8] & 0xFF) << 8) | (buf[9] & 0xFF);
-                //페이로드 확인하기
-                byte[] inBuf = new byte[payloadSize];
-                System.arraycopy(buf, headerSize,inBuf,0,min(bufLen - headerSize, payloadSize));
-                int inIdx = min(bufLen - headerSize, payloadSize);
-                //첫 버퍼에 다 못담은 페이로드 확인하기
-                for (int i = 1; i < (headerSize + payloadSize) / (float) bufferSize; i++) {
-                    buf = new byte[bufferSize];
-                    bufLen = clientSocket.getInputStream().read(buf);
-                    System.arraycopy(buf,0,inBuf,inIdx,bufLen);
-                    inIdx+=bufferSize;
-                }
-                System.out.println(Arrays.toString(inBuf));
-                //페이로드 타입 지정하기
-                Object in;
-                if (bufType == 0) {
-                    in = Integer.parseInt(new String(inBuf));
-                } else {
-                    in = new String(inBuf);
-                }
+                Object in = com.echo.Decode.getPayload(clientSocket);
 
                 System.out.println("Client>" + in);
 
-        //에코보내기
-            //헤더붙이기
-                //데이터타입 스트링으로 변환
-                if (bufType == 0) {
-                    in = String.valueOf(in);
-                }
-                //데이터길이 구하기
-                payloadSize = in.toString().getBytes().length;
-                //바이트배열 선언
-                byte[] dataToecho = new byte[10 + payloadSize];
-                //헤더사이즈 담기
-                headerSize = 10;
-                dataToecho[0] = (byte) ((headerSize >> 24) & 0xFF);
-                dataToecho[1] = (byte) ((headerSize >> 16) & 0xFF);
-                dataToecho[2] = (byte) ((headerSize >> 8) & 0xFF);
-                dataToecho[3] = (byte) (headerSize & 0xFF);
-                //데이터타입 담기
-                dataToecho[4] = (byte) 0;
-                dataToecho[5] = (byte) bufType;
-                //페이로드 길이 담기
-                dataToecho[6] = (byte) ((payloadSize >> 24) & 0xFF);
-                dataToecho[7] = (byte) ((payloadSize >> 16) & 0xFF);
-                dataToecho[8] = (byte) ((payloadSize >> 8) & 0xFF);
-                dataToecho[9] = (byte) (payloadSize & 0xFF);
-                //페이로드 담기
-                System.arraycopy(in.toString().getBytes(),0,dataToecho, headerSize, payloadSize);
+                Encode.sendMassage(in, out);
 
-                System.out.println(Arrays.toString(dataToecho));
-
-                //에코보내기
-                out.write(dataToecho);
-
-                //종료조건
                 if (in.equals("exit")) {
                     break;
                 }
@@ -249,13 +189,8 @@ public class EchoServer {
                 InetAddress address = packet.getAddress();
                 int clientPort = packet.getPort();
                 System.out.println("Client(Port:" + clientPort + ")>" + dataGot);
-//
-//                byte[] test = new byte[buf.length*2];
-//                System.arraycopy(buf,0,test,0,buf.length);
-//                System.arraycopy(buf,0,test,buf.length,buf.length);
 
                 packet = new DatagramPacket(buf, buf.length, address, clientPort);
-//                System.out.println("out>" + new String(buf));
                 socket.send(packet);
 
                 if (dataGot.equals("exit")) {
